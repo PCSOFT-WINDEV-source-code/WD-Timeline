@@ -1,0 +1,180 @@
+#To edit and compare internal_properties, use WINDEV integrated tools.
+#Internal properties refer to the properties of controls in windows, reports, etc.
+info :
+ name : TimelineEvent
+ major_version : 28
+ minor_version : 0
+ type : 4
+ description : ""
+ subtype : 0
+class :
+ identifier : 0x11129f7202960da2
+ internal_properties : CAAAAAgAAAB2/vstTMCJbS/hlxjFxirSqKvCUuv8YxgpWyl7S3iA
+ code_elements :
+  type_code : 10
+  p_codes :
+   -
+     code : |1-
+      TimelineEvent is Class
+      	
+      PRIVATE
+      	m_sID			is string						// Identifier of the event
+      	m_sTitle		is string						// Title of the event
+      	m_sDescription	is string						// Description of the event
+      	m_dtStartDate	is datetime					// Start date of the event
+      	m_dtEndDate		is datetime					// End date of the event
+      	m_nColor		is int		= LightGray		// Color of the event		
+      	m_sExtendedInfo	is string						// Extended information (personal data)
+      	
+      PUBLIC CONSTANT
+      	UID				is string
+      	m_duDuration		is duration
+      	
+      END
+     type : 131072
+  procedures :
+   -
+     name : Constructor
+     procedure_id : 1230220960244567458
+     type_code : 27
+     code : |1-
+      Procedure Constructor()
+      
+      // Build a UID
+      UID = “TMLEV” + NumToString(GetIdentifier, “08X”)
+      m_dtEndDate = “00000000000000000”
+     type : 589824
+   -
+     name : Destructor
+     procedure_id : 1230220960244632994
+     type_code : 28
+     code : |1-
+      Procedure Destructor()
+     type : 655360
+  properties :
+   -
+     name : p_ID
+     identifier : 0x11129f7202970da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_ID()
+         RESULT m_sID
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_ID(sID is string)
+         m_sID = sID
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Title
+     identifier : 0x11129f7202980da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Title()
+         RESULT m_sTitle
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Title(sTitle is string)
+         m_sTitle = sTitle
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Description
+     identifier : 0x11129f7202990da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Description()
+         RESULT m_sDescription
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Description(sDescription is string)
+         m_sDescription = sDescription
+        type : 2031616
+     template_refs : []
+   -
+     name : p_StartDate
+     identifier : 0x11129f72029a0da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_StartDate()
+         RESULT m_dtStartDate
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_StartDate(dtDate is datetime)
+         m_dtStartDate = dtDate
+         IF NOT DateValid(m_dtEndDate) THEN m_dtEndDate = m_dtStartDate
+         m_duDuration     = m_dtEndDate - m_dtStartDate
+        type : 2031616
+     template_refs : []
+   -
+     name : p_EndDate
+     identifier : 0x11129f72029b0da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_EndDate()
+         RESULT m_dtEndDate
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_EndDate(dtDate is datetime)
+         m_dtEndDate = dtDate
+         m_duDuration     = m_dtEndDate - m_dtStartDate
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Color
+     identifier : 0x11129f72029c0da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Color()
+         RESULT m_nColor
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Color(nColor is int)
+         m_nColor = nColor
+        type : 2031616
+     template_refs : []
+   -
+     name : p_ExtendedInfo
+     identifier : 0x11129f72029d0da2
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_ExtendedInfo()
+         RESULT m_sExtendedInfo
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_ExtendedInfo(sExtendedInfo is string)
+         m_sExtendedInfo = sExtendedInfo
+        type : 2031616
+     template_refs : []
+  procedure_templates : []
+  property_templates : []
+ code_parameters :
+  internal_properties : CAAAAAgAAACVGQgYbalU7DKC3oH4ItDrjtcTHXXV/EuH8q0IbhyQlw==
+  original_name : CClasse1
+resources :
+ string_res :
+  identifier : 0x1006a1d934d4653b
+  internal_properties : CAAAAAgAAACm76HWfKGWp33VjXInA4cRlqArlgTTA862QGt72W2ld5Y=
+custom_note :
+ internal_properties : CAAAAAgAAABtB9HWVzrXO2+4NDRVK0vmzaNKrCKqH1DBX30lMmGZ

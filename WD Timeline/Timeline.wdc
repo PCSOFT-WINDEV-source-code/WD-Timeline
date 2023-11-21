@@ -1,0 +1,2151 @@
+#To edit and compare internal_properties, use WINDEV integrated tools.
+#Internal properties refer to the properties of controls in windows, reports, etc.
+info :
+ name : Timeline
+ major_version : 28
+ minor_version : 0
+ type : 4
+ description : ""
+ subtype : 0
+class :
+ identifier : 0x1b17bc8c003222d5
+ internal_properties : CAAAAAgAAAB2/vstTMCJbS/hlxjFxirSqKvCUuv8YxgpWyl7S3iA
+ code_elements :
+  type_code : 10
+  p_codes :
+   -
+     code : |1-
+      Timeline is Class
+      	
+      PRIVATE
+      	m_sControl					is string											// Image control associated with the timeline
+      	
+      	m_dtDateTimeSelect			is datetime
+      	m_dtMinDateTime			is datetime										// Minimum date of the timeline
+      	m_dtMaxDateTime			is datetime										// Maximum date of the timeline
+      	m_nZoom						is int											// Zoom of the timeline
+      	
+      	m_nMaxWidth				is unsigned int								// Maximum width calculated on the duration of the timeline
+      	m_nTimeLineWidth			is unsigned int								// Control Width 
+      	
+      	m_bMove				is boolean											// Flag indicating whether we are in movement
+      	m_nLastCoordinates		is int											// Last coordinates of the mouse
+      	m_tBeginOfMovement			is time											// Backup time for the beginning of movement
+      	
+      	m_rOffset					is real												// Offset of the timeline
+      	m_rPreviousOffset		is real												// Previous offset of the timeline
+      	m_nPreviousMove		is int											// Previous move
+      	
+      	m_arrEvents				is array of TimelineEvent dynamic			// List the events of the timeline
+      	m_arrVisibleEvents		is array of TimelineEvent dynamic			// List the visible events of the timeline
+      	m_pclEventHovered		is TimelineEvent dynamic = Null				// Event hovered
+      	m_aaRectangles				is ASSOCIATIVE ARRAY of RECT
+      	m_aaFullRectangles		is ASSOCIATIVE ARRAY of RECT
+      	
+      	m_dtMinRealDateTime		is datetime										// Real minimum date of the timeline
+      	m_dtMaxRealDateTime		is datetime										// Real maximum date of the timeline
+      	
+      	m_dtMinVisibleDateTime		is datetime										// Real minimum date of the timeline
+      	m_dtMaxVisibleDateTime		is datetime										// Real maximum date of the timeline
+      	m_dtMidVisibleDateTime		is datetime										// Real date found in the center of the timeline
+      	m_dtMinAdjustedDateTime		is datetime										// Adjusted minimum date of the timeline
+      	
+      	
+      	m_bMoveAuthorized		is boolean											// Flag indicating whether the timeline can be moved
+      	m_bMoveAutoAuthorized	is boolean											// Flag indicating whether the automatic move of the timeline is allowed
+      	m_nWidthIntervals		is int											// Width of the timeline intervals
+      	
+      	m_pclSynchronizedTimeline	is Timeline dynamic								// Timeline synchronized
+      	m_pclParentTimeline		is Timeline dynamic								// Parent timeline
+      	
+      	m_nColor					is int											// Color of the text
+      	m_nBackgroundColor				is int											// Background color
+      	m_nSelectionColor			is int											// Selection color
+      	m_fntFont					is font											// Text font
+      	m_rZoomDist					is real												// Zoom for distance between each element
+      	m_sCallbackClick				is string											// Callback for click
+      	
+      PUBLIC CONSTANT	
+      	UID							is string											// Unique identifier of the timeline
+      	DC							is int											// DC of the timeline
+      END
+      
+      CONSTANT
+      	
+      	HEIGHT_ELT		= 3	
+      	HEIGHT_FULLELT	= 32
+      END
+      
+      EXTERN “winconst.wl”
+     type : 131072
+  procedures :
+   -
+     name : Constructor
+     procedure_id : 1952236272973193941
+     type_code : 27
+     code : |1-
+      Procedure Constructor(TemplateControl, *)
+      
+      // Build a UID
+      UID = “TML” + NumToString(GetIdentifier, “08X”)
+      
+      dDate is date = Today
+      
+      // Keeps the name of the control
+      m_sControl = TemplateControl..FullName
+      
+      // Stores the width
+      m_nTimeLineWidth = TemplateControl..Width
+      
+      // Allows the automatic move
+      m_bMoveAutoAuthorized = True
+      
+      // No parent timeline
+      m_pclParentTimeline = Null
+      
+      // Default Colors
+      m_nBackgroundColor 		= RGB(68, 68, 68)
+      m_nColor     		= LightGray
+      m_nSelectionColor	= PastelBlue
+      
+      // Default font
+      m_fntFont			= FontCreate(“Tahoma”, 8, Normal, m_nColor)
+      
+      // Zoom for distance
+      m_rZoomDist			= 1.0
+      
+      IF MyParameters..NbReceived = 2 THEN
+      	
+      	// Creates the synchronized timeline
+      	m_pclSynchronizedTimeline = new Timeline(MyParameters[2])
+      	m_pclSynchronizedTimeline.p_ParentTimeline = object
+      ELSE
+      	
+      	// No synchronized timeline
+      	m_pclSynchronizedTimeline 	= Null	
+      END
+      
+      // Default zoom ////////////////////////////////////////////////
+      p_Zoom = zoomDays
+      m_dtDateTimeSelect = “00000000000000000”
+      
+      // Default timeline ////////////////////////////////////////////		
+      
+      // Minimum DateTime: 1st January 0h00, 90 years backward
+      p_MinDateTime = CreateDateTime(dDate..Year - 90)
+      // Maximum DateTime: 31st December 23:59, 10 years forward
+      p_MaxDateTime = CreateDateTime(dDate..Year + 11)
+      
+      // Manages the events
+      Event(OnResizing, m_sControl, WM_SIZE)
+      Event(OnDoubleClick, 		m_sControl, WM_LBUTTONDBLCLK)
+      Event(OnDoubleClick, 		m_sControl, WM_RBUTTONDBLCLK)
+      Event(OnButtonDown, 	m_sControl, WM_LBUTTONDOWN)
+      Event(OnButtonDown, 	m_sControl, WM_MBUTTONDOWN)
+      Event(OnButtonUp, 	m_sControl, WM_LBUTTONUP)
+      Event(OnButtonUp, 	m_sControl, WM_MBUTTONUP)
+      Event(Rollover, 			m_sControl, WM_MOUSEMOVE)
+      Event(OnMouseWheel, 	“*.*”, 	  WM_MOUSEWHEEL)
+     type : 589824
+   -
+     name : Destructor
+     procedure_id : 1952236272973259477
+     type_code : 28
+     code : |1+
+      Procedure Destructor()
+      
+     type : 655360
+   -
+     name : OnResizing
+     procedure_id : 1952237630183174646
+     type_code : 12
+     group : 4
+     code : |1-
+      // Summary: Run during the resize operation
+      Procedure PRIVATE OnResizing()
+      
+      // Stores the width
+      m_nTimeLineWidth = {m_sControl, indControl}..Width
+      
+      // Refreshes the timeline
+      Displays()
+     type : 458752
+   -
+     name : OnButtonDown
+     procedure_id : 1952237956600830837
+     type_code : 12
+     group : 4
+     code : |1+
+      // Summary: Managing the WM_LBUTTONDOWN event
+      // Syntax:
+      //OnButtonDown ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE OnButtonDown()
+      
+      // Beginning of move
+      m_bMove = True
+      
+      // Keeps the coordinates to calculate the move
+      m_nLastCoordinates = CursorPos(cpScreen)
+      
+      // Keeps the start time of the movement
+      m_tBeginOfMovement = Now
+      
+      // Keeps the current offset
+      m_rPreviousOffset = p_Offset
+     type : 458752
+   -
+     name : OnButtonUp
+     procedure_id : 1952237956600896483
+     type_code : 12
+     group : 4
+     code : |1-
+      // Summary: Managing the WM_LBUTTONUP event
+      // Syntax:
+      //OnButtonUp ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE OnButtonUp()
+      
+      // Restores the mouse cursor
+      {m_sControl, indControl}..MouseCursor = curArrow
+      
+      IF m_bMove THEN
+      	
+      	// End of move
+      	m_bMove = False
+      	
+      	rSpeed		is real
+      	nMove	is int
+      	duDuration 		is duration 
+      	tNow	 	is time = Now
+      	
+      	// Calculates the distance browsed
+      	nMove = p_Offset - m_rPreviousOffset
+      	
+      	IF Abs(nMove) > 0 THEN
+      		
+      		// Calculates the duration of the move
+      		duDuration = tNow - m_tBeginOfMovement
+      		
+      		// Calculates the resulting speed (v = d/t)
+      		rSpeed = nMove / duDuration..InSeconds
+      		
+      		// Start time for the deceleration
+      		m_tBeginOfMovement = Now
+      		
+      		LOOP
+      			
+      			// Retrieves the time
+      			tNow = Now
+      			
+      			// Calculates the duration of the move
+      			duDuration = tNow - m_tBeginOfMovement
+      			
+      			// New position
+      			p_Offset += rSpeed * duDuration..InSeconds
+      			
+      			// If the new position makes that the right side of the control is positioned
+      			// below the width of the template
+      			IF p_Offset + m_nMaxWidth <= m_nTimeLineWidth THEN		
+      				
+      				// Reverses the speed
+      				rSpeed = -rSpeed
+      				
+      				// If the new position makes that the left side of the control is positioned
+      				// beyond 0 (left side of the template)
+      			ELSE IF p_Offset >= 0 THEN
+      				
+      				// Reverses the speed
+      				rSpeed = -rSpeed
+      			END
+      			
+      			// Decrement the speed
+      			rSpeed = rSpeed / 1.5
+      			
+      			IF Abs(rSpeed) < 0.25 THEN BREAK
+      		END
+      	END
+      END
+     type : 458752
+   -
+     name : OnMove
+     procedure_id : 1952237956600962050
+     type_code : 12
+     group : 4
+     code : |1-
+      // Summary: Managing the WM_MOUSEMOVE event (move)
+      // Syntax:
+      //OnMove ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE OnMove()
+      
+      // If a move is in progress
+      IF m_bMove = True THEN
+      	
+      	// Retrieves the new coordinates
+      	nCoordinates is int = CursorPos(cpScreen)
+      	
+      	// Calculates the move
+      	nMove is int = LoWord(nCoordinates) - LoWord(m_nLastCoordinates)
+      	
+      	m_tBeginOfMovement = Now
+      	m_rPreviousOffset = p_Offset
+      	
+      	IF nMove <> 0 THEN
+      		
+      		// Retrieves the current position
+      		nNewPos is int = p_Offset
+      		
+      		// Calculates the new position
+      		nNewPos += nMove
+      		
+      		// If the new position makes that the right side of the control is positioned
+      		// below the width of the template, recalculate the position in order for the control
+      		// to be positioned properly
+      		IF nNewPos + m_nMaxWidth <= m_nTimeLineWidth THEN		
+      			
+      			// Stay on the right
+      			nNewPos = m_nTimeLineWidth - m_nMaxWidth
+      			
+      			// Indicates that we cannot go any further
+      			{m_sControl, indControl}..MouseCursor = curForbidden
+      			
+      			// If the new position makes that the left side of the control is positioned
+      			// beyond 0 (left side of the template), recalculate position in order for the control
+      			// to be positioned properly
+      		ELSE IF nNewPos >= 0 THEN
+      			
+      			// Stay on the left
+      			nNewPos = 0
+      			
+      			// Indicates that we cannot go any further
+      			{m_sControl, indControl}..MouseCursor = curForbidden
+      			
+      			// The new position is correct		
+      		ELSE
+      			
+      			// Indicates that we can continue
+      			{m_sControl, indControl}..MouseCursor = curArrow
+      		END
+      		
+      		// Keeps the new position
+      		p_Offset = nNewPos
+      	END
+      	
+      	// Saves the move
+      	m_nPreviousMove = nMove
+      	
+      	// Saves the new coordinates
+      	m_nLastCoordinates = nCoordinates	
+      END
+     type : 458752
+   -
+     name : Rollover
+     procedure_id : 1952237956601027617
+     type_code : 12
+     group : 4
+     code : |1-
+      // Summary: Managing the WM_MOUSEMOVE event (rollover)
+      // Syntax:
+      //Rollover ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE Rollover()
+      
+      // If a move is in progress
+      IF m_bMove THEN
+      	
+      	IF m_bMoveAuthorized THEN
+      		
+      		// Process the move	
+      		OnMove()
+      	END
+      	
+      	RETURN	
+      END
+      
+      nSx, nSy 	are int
+      pclEvt	 	is TimelineEvent dynamic
+      stRect	 	is RECT
+      stCmpRect 	is RECT
+      stOldRect	is RECT
+      bRollover	 	is boolean
+      nColor 	is int
+      bFullDisplay is boolean
+      
+      // Retrieve the coordinates of the mouse
+      nSx = MouseXPos
+      nSy = MouseYPos
+      
+      // Defines whether the full boxes can be displayed
+      bFullDisplay = ({m_sControl, indControl}..Height > HEIGHT_FULLELT * 3)
+      
+      // For each visible event
+      FOR EACH pclEvt of m_arrVisibleEvents
+      	
+      	// Retrieves the rectangle of the event
+      	IF m_aaRectangles[pclEvt.UID] <> Null THEN
+      		
+      		stRect = m_aaRectangles[pclEvt.UID]
+      		
+      		// If it can be entirely displayed
+      		IF bFullDisplay THEN
+      			
+      			// Redefines the rectangle
+      			stRect.y2 = stRect.y1 + HEIGHT_ELT
+      			
+      			// And retrieves the rectangle of the title box
+      			IF m_aaFullRectangles[pclEvt.UID] <> Null THEN
+      				stCmpRect = m_aaFullRectangles[pclEvt.UID]
+      			ELSE
+      				VariableReset(stCmpRect)
+      			END
+      		END
+      		
+      		// Checks whether this event is hovered by the mouse cursor
+      		IF stRect.y1 <= nSy <= stRect.y2 _OR_ stCmpRect.y1 <= nSy <= stCmpRect.y2 THEN
+      			IF stRect.x1 <= nSx <= stRect.x2 _OR_ stCmpRect.x1 <= nSx <= stCmpRect.x2 THEN
+      				
+      				// Hover an event
+      				bRollover = True
+      				
+      				// If the hovered event is different
+      				IF (m_pclEventHovered <> Null _AND_ m_pclEventHovered.uid <> pclEvt.UID) _OR_ m_pclEventHovered = Null THEN
+      					
+      					// Modifies the tooltip and the cursor
+      					{m_sControl, indControl}..ToolTip = [gFontBold(True)] + pclEvt.p_Title + [CR] + gFontBold(False) + pclEvt.p_Description
+      					{m_sControl, indControl}..MouseCursor = curSystemHand
+      					
+      					dStartDrawing(m_sControl, dNoErase)
+      					
+      					// If the previous event is not null
+      					IF m_pclEventHovered <> Null THEN
+      						
+      						// Retrieves the rectangle
+      						stOldRect = m_aaRectangles[m_pclEventHovered.UID]
+      						
+      						IF bFullDisplay THEN
+      							stOldRect.y2 = stOldRect.y1 + HEIGHT_ELT
+      						END
+      						
+      						// Redraw the event
+      						dRectangle(stOldRect.x1, stOldRect.y1, stOldRect.x2, stOldRect.y2, m_pclEventHovered.p_Color, m_pclEventHovered.p_Color)	
+      					END
+      					
+      					// Retrieves the color of the event
+      					nColor = pclEvt.p_Color
+      					
+      					// Darkens the color
+      					nColor = HSL(ColorHue(nColor), ColorSaturation(nColor), ColorLightness(nColor) / 2)
+      					
+      					// Point of the event
+      					dRectangle(stRect.x1, stRect.y1, stRect.x2, stRect.y2, nColor, pclEvt.p_Color)		
+      				END
+      				
+      				// Keeps the hovered event
+      				m_pclEventHovered = pclEvt
+      				
+      				BREAK
+      			END
+      		END		
+      	END
+      END
+      
+      // If no event is hovered
+      IF bRollover = False THEN
+      	
+      	// If the previous event is not null
+      	IF m_pclEventHovered <> Null THEN
+      		
+      		// Retrieves the rectangle
+      		stOldRect = m_aaRectangles[m_pclEventHovered.UID]
+      		
+      		IF bFullDisplay THEN
+      			stOldRect.y2 = stOldRect.y1 + HEIGHT_ELT
+      		END
+      		
+      		// Redraw the event
+      		dRectangle(stOldRect.x1, stOldRect.y1, stOldRect.x2, stOldRect.y2, m_pclEventHovered.p_Color, m_pclEventHovered.p_Color)	
+      	END
+      	
+      	m_pclEventHovered = Null
+      	
+      	// Restores the tooltip and the cursor
+      	{m_sControl, indControl}..ToolTip = “”
+      	{m_sControl, indControl}..MouseCursor = curArrow
+      END
+     type : 458752
+   -
+     name : Displays
+     procedure_id : 1952238386098381673
+     type_code : 12
+     code : |1-
+      // Summary: Refreshes the display of the timeline
+      // Syntax:
+      //Displays ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure Displays()
+      
+      EXTERN STC_TEMPLATE
+      
+      nNumElements			is int											// Total  number of elements
+      duDuration				is duration											// Display duration							
+      dtDate				is datetime			
+      nX					is real		
+      nWidthTex			is int											// Width of the text
+      nWidthEvt 		is int											// Width of an event
+      sText				is string
+      fntFont			is font											// Text font
+      nWidthElt			is int											// Width of an element						
+      arrEvt				is array of TimelineEvent dynamic			// Events displayed
+      pclEvt				is TimelineEvent dynamic		
+      nOffSetV			is int	
+      stRect				is RECT
+      stFullRect		is RECT
+      nSubscript1st			is int											// Subscript of the first element displayed
+      nSubscriptLas			is int											// Subscript of the last element displayed
+      bFullDisplay 	is boolean											// Flag indicating whether the title boxes can be displayed
+      nColor			is int
+      nLightenedColor 	is int
+      
+      // Display duration
+      duDuration = m_dtMaxDateTime - m_dtMinDateTime
+      
+      // According to the zoom
+      SWITCH p_Zoom
+      
+      	// Decades
+      	CASE zoomDecades
+      		
+      		nNumElements = (m_dtMaxDateTime..Year - m_dtMinDateTime..Year) / 10
+      		nWidthElt = 96 * m_rZoomDist
+      		
+      	// Years
+      	CASE zoomYears
+      		
+      		nNumElements = m_dtMaxDateTime..Year - m_dtMinDateTime..Year
+      		nWidthElt = 72 * m_rZoomDist
+      		
+      	// Month
+      	CASE zoomMonths
+      		
+      		nNumElements = m_dtMaxDateTime..Year * 12 + m_dtMaxDateTime..Month - m_dtMinDateTime..Year * 12 - m_dtMinDateTime..Month
+      		nWidthElt = 72 * m_rZoomDist
+      		
+      	// Days
+      	CASE zoomDays
+      		
+      		nNumElements = duDuration..InDays
+      		nWidthElt = 72 * m_rZoomDist
+      		
+      	// Hours
+      	CASE zoomHours
+      		
+      		nNumElements = duDuration..InHours
+      		nWidthElt = 72 * m_rZoomDist
+      		
+      	// 10x minutes
+      	CASE zoomMinutes10
+      		
+      		nNumElements = duDuration..InMinutes * 10
+      		nWidthElt = 72 * m_rZoomDist
+      		
+      	// Minutes
+      	CASE zoomMinutes
+      		
+      		nNumElements = duDuration..InMinutes
+      		nWidthElt = 72 * m_rZoomDist
+      END
+      
+      // Maximum width of the timeline
+      m_nMaxWidth = nWidthElt * nNumElements
+      
+      // Width of intervals
+      m_nWidthIntervals = nWidthElt
+      
+      // Background color
+      {m_sControl, indControl}..BrushColor = m_nBackgroundColor
+      
+      // Colors of the text
+      nColor = m_nColor
+      nLightenedColor = HSL(ColorHue(nColor), ColorSaturation(nColor), Max(100, ColorLightness(nColor) + 25))
+      
+      // Start the drawing
+      dStartDrawing(m_sControl, dNoErase)
+      DC = dStartDrawing(m_sControl, dErase)
+      
+      dRectangle(0, 0, {m_sControl, indControl}..Width, {m_sControl, indControl}..Height, m_nBackgroundColor, m_nBackgroundColor)
+      
+      // No event is hovered	
+      m_pclEventHovered = Null
+      
+      // Creates the font
+      fntFont = m_fntFont
+      fntFont..Color = m_nColor
+      STC_TEMPLATE..Font = fntFont
+      
+      // Start offset
+      nX = Round(m_bMoveAuthorized ? p_Offset ELSE 0)
+      
+      // First DateTime displayed
+      m_dtMinVisibleDateTime = PositionToDate(Abs(nX) / nWidthElt)
+      m_dtMinAdjustedDateTime = PositionToDate(0)
+      
+      // Adjustment
+      DateAdjust(m_dtMinVisibleDateTime)
+      DateAdjust(m_dtMinAdjustedDateTime)
+      
+      // Last DateTime displayed
+      m_dtMaxVisibleDateTime = PositionToDate((Abs(nX) + m_nTimeLineWidth) / nWidthElt)
+      
+      // Adjustment
+      DateAdjust(m_dtMaxVisibleDateTime)
+      
+      // Read date and time (bounds)	
+      m_dtMinRealDateTime 	= PositionToDate(0, True)
+      m_dtMaxRealDateTime 	= PositionToDate(m_nTimeLineWidth, True)
+      
+      // Applies the modifications to the synchronized timeline
+      IF m_pclSynchronizedTimeline <> Null THEN
+      	
+      	// Modify the dates in order for them to correspond
+      	m_pclSynchronizedTimeline.p_MinDateTime = PositionToDate(0)
+      	m_pclSynchronizedTimeline.p_MaxDateTime = p_MaxDateTime
+      	
+      	// Lower zoom
+      	m_pclSynchronizedTimeline.p_Zoom = Min(7, p_Zoom + 1)
+      END
+      
+      // If the range of dates is less than the displayable range of dates
+      IF m_dtMaxRealDateTime > m_dtMaxDateTime THEN
+      	
+      	// Prevent from moving
+      	m_bMoveAuthorized = False
+      ELSE
+      	
+      	// Allows the move
+      	m_bMoveAuthorized = True
+      END
+      
+      // Retrieves the events passed between these two dates
+      arrEvt = ListEvents(m_dtMinVisibleDateTime, m_dtMaxVisibleDateTime)
+      
+      // First displayable subscript
+      nSubscript1st = DateToPosition(m_dtMinVisibleDateTime)
+      nSubscriptLas = DateToPosition(m_dtMaxVisibleDateTime)
+      nSubscriptLas = (nSubscript1st + nSubscriptLas + 1)
+      
+      // Average date
+      m_dtMidVisibleDateTime = PositionToDate((nSubscriptLas - nSubscript1st) / 2)
+      
+      // Selects the font
+      dFont(fntFont)
+      
+      // For each visible "date"
+      FOR i = nSubscript1st _TO_ nSubscriptLas
+      	
+      	IF NOT (nX + nWidthElt < 0 _OR_ nX + p_Offset > m_nTimeLineWidth) THEN
+      		
+      		// Retrieves the date of the current element
+      		dtDate = PositionToDate(i - nSubscript1st)	
+      		
+      		// According to the current zoom
+      		SWITCH p_Zoom
+      		
+      			// Decades
+      			CASE zoomDecades
+      				
+      				// Display the decade
+      				sText = dtDate..Year
+      				
+      			// Years
+      			CASE zoomYears
+      				
+      				// Display the year
+      				sText = dtDate..Year
+      				
+      			// Month
+      			CASE zoomMonths
+      				
+      				// Display the month and year
+      				sText = DateToString(dtDate..Date, “MMMM”) + CR +  DateToString(dtDate..Date, “YYYY”)
+      				
+      			// Days
+      			CASE zoomDays
+      				
+      				// Display the date
+      				IF m_pclParentTimeline = Null THEN
+      					sText = DateToDayInAlpha(dtDate..Date) + CR + DateToString(dtDate..Date, “DD MMM YYYY”)
+      				ELSE
+      					sText = DateToString(dtDate..Date, “DD”) + “ ” + DateToDayInAlpha(dtDate..Date)
+      				END
+      				
+      			// Hours
+      			CASE zoomHours
+      				
+      				// Display the date and the full time
+      				IF m_pclParentTimeline = Null THEN
+      					sText = DateToString(dtDate..Date, “DD MMM YYYY”) + CR + TimeToString(dtDate..Time, “HH:MM”)
+      				ELSE
+      					sText = TimeToString(dtDate..Time, “HH:MM”)
+      				END
+      				
+      			// Tens of minutes
+      			CASE zoomMinutes10
+      				
+      				// Display the date and the time to the nearest ten of minutes
+      				IF m_pclParentTimeline = Null THEN
+      					sText = DateToString(dtDate..Date, “DD MMM YYYY”) + CR + TimeToString(dtDate..Time, “HH:MM”)
+      				ELSE
+      					sText = TimeToString(dtDate..Time, “HH:MM”)
+      				END
+      				
+      			// Minutes
+      			CASE zoomMinutes
+      				
+      				// Display the date and the time
+      				IF m_pclParentTimeline = Null THEN
+      					sText = DateToString(dtDate..Date, “DD MMM YYYY”) + CR + TimeToString(dtDate..Time, “HH:MM”)
+      				ELSE
+      					sText = TimeToString(dtDate..Time, “HH:MM”)
+      				END
+      		END
+      		
+      		// Vertical gradient line
+      		dRectangleGradient(nX, 0, nX + 1, {m_sControl, indControl}..Height, m_nBackgroundColor, nColor, 90)
+      		
+      		// If the text is written on two lines
+      		IF StringCount(sText, CR) > 0 THEN
+      			
+      			// Displays the two lines
+      			dAdvancedText(DC, (nX), ({m_sControl, indControl}..Height - 28), (nX + nWidthElt), ({m_sControl, indControl}..Height - 14), ExtractString(sText, 1, CR), DT_CENTER + DT_VCENTER + DT_EDITCONTROL, nColor)
+      			dAdvancedText(DC, (nX), ({m_sControl, indControl}..Height - 14), (nX + nWidthElt), ({m_sControl, indControl}..Height), ExtractString(sText, 2, CR), DT_CENTER + DT_VCENTER + DT_EDITCONTROL, nLightenedColor)
+      			nOffSetV = 32				
+      		ELSE
+      			
+      			// Displays on one line
+      			dAdvancedText(DC, (nX), ({m_sControl, indControl}..Height - 14), (nX + nWidthElt), ({m_sControl, indControl}..Height), sText, DT_CENTER + DT_VCENTER + DT_EDITCONTROL, nColor)
+      			nOffSetV = 18
+      		END
+      		
+      	END
+      	
+      	// Next position
+      	nX += nWidthElt
+      	
+      	// Adjusts the total width
+      	IF m_nMaxWidth < nX THEN
+      		m_nMaxWidth = nX
+      	END
+      END
+      
+      // Source point
+      nX = (m_bMoveAuthorized ? p_Offset ELSE 0)
+      
+      // If a date was selected
+      IF m_dtDateTimeSelect <> “00000000000000000” THEN
+      	dtDate = m_dtDateTimeSelect
+      ELSE 
+      	
+      	// If no date was selected, if the timeline cannot be moved and if we own a synchronized timeline
+      	IF m_bMoveAuthorized = False _AND_ m_pclSynchronizedTimeline <> Null THEN
+      		
+      		// Retrieve the first visible date of the synchronized timeline
+      		dtDate = m_pclSynchronizedTimeline.PositionToDate(-m_pclSynchronizedTimeline.p_Offset, True)
+      	ELSE
+      		// Today
+      		dtDate = Today + Now		
+      	END		
+      END
+      
+      nX += DateToPosition(dtDate, True)
+      
+      IF NOT (nX + nWidthElt < 0 _OR_ nX + p_Offset > m_nTimeLineWidth) THEN
+      	dRectangleGradient(nX, 0, nX + 1, {m_sControl, indControl}..Height - nOffSetV, m_nBackgroundColor, m_nSelectionColor, 90)
+      END
+      
+      // Defines whether the full boxes can be displayed
+      bFullDisplay = ({m_sControl, indControl}..Height > HEIGHT_FULLELT * 3)
+      
+      // Source point
+      nX = (m_bMoveAuthorized ? p_Offset ELSE 0)
+      
+      Sort(arrEvt, asMember, “+m_dtStartDate”)
+      
+      // For each event to display
+      FOR EACH pclEvt of arrEvt
+      	
+      	// Width of the event in pixels
+      	nWidthEvt = (Max(3.0, DurationToPixels(pclEvt.p_StartDate, pclEvt.p_EndDate)))
+      	nWidthElt = 256
+      	
+      	// Rectangle of the event
+      	stRect.x1 = nX + (DateToPosition(pclEvt.p_StartDate, True))
+      	
+      	IF bFullDisplay THEN
+      		
+      		stRect.y1 = {m_sControl, indControl}..Height - nOffSetV - HEIGHT_FULLELT - HEIGHT_ELT * 2
+      		stRect.y2 = stRect.y1 + HEIGHT_FULLELT	/ (pclEvt.p_Title = “” ? 1.9 ELSE 1)		
+      		
+      		// Calculates the rectangle of the title box
+      		stFullRect.x1 = stRect.x1 + HEIGHT_ELT * 2 + 4
+      		stFullRect.x2 = stRect.x1 + nWidthElt + HEIGHT_ELT * 2 - 4
+      		stFullRect.y1 = stRect.y1 + HEIGHT_ELT * 2 + 2
+      		stFullRect.y2 = stRect.y2 + HEIGHT_ELT * 2 - 2
+      		
+      		// Font
+      		dFont(fntFont)
+      		
+      		// Width of the text
+      		dAdvancedText(DC, stFullRect.x1, stFullRect.y1, stFullRect.x2, stFullRect.y2, (pclEvt.p_Title + RepeatString(“ ”, Length(pclEvt.p_Title) / 3) + [CR] + pclEvt.p_Description), DT_TOP + DT_LEFT + DT_CALCRECT + DT_EDITCONTROL)
+      		nWidthTex = Min(256, stFullRect.x2 - stFullRect.x1)
+      		nWidthElt = nWidthTex + 12				
+      		
+      		// Finds whether another event is located at the position
+      		WHILE DetectSuperposition(stRect, arrEvt, pclEvt)
+      			
+      			stRect.y1 -= HEIGHT_FULLELT + HEIGHT_FULLELT / 2
+      			stRect.y2 -= HEIGHT_FULLELT + HEIGHT_FULLELT / 2
+      		END
+      		
+      		stRect.x2 = stRect.x1 + nWidthEvt
+      		
+      	ELSE
+      		
+      		stRect.x2 = stRect.x1 + nWidthEvt
+      		
+      		stRect.y1 = {m_sControl, indControl}..Height - nOffSetV - HEIGHT_ELT
+      		stRect.y2 = {m_sControl, indControl}..Height - nOffSetV
+      		
+      		// Finds whether another event is located at the position
+      		WHILE DetectSuperposition(stRect, arrEvt, pclEvt)
+      			
+      			stRect.y1 -= HEIGHT_ELT + HEIGHT_ELT / 2
+      			stRect.y2 -= HEIGHT_ELT + HEIGHT_ELT / 2
+      		END
+      	END
+      	
+      	// Transmits the rectangle
+      	m_aaRectangles[pclEvt.UID] = stRect 
+      	
+      	// If the border of the event exceeds the timeline, its drawing is canceled
+      	IF stRect.y2 < 0 THEN CONTINUE
+      	
+      	// In full display mode?
+      	IF bFullDisplay THEN
+      		
+      		// Small rectangle
+      		dRectangle(stRect.x1, stRect.y1, stRect.x2, stRect.y1 + HEIGHT_ELT, pclEvt.p_Color, pclEvt.p_Color)
+      		
+      		// Calculates the rectangle of the title box
+      		stFullRect.x1 = stRect.x1 + HEIGHT_ELT * 2
+      		stFullRect.x2 = stRect.x1 + nWidthElt + HEIGHT_ELT * 2
+      		stFullRect.y1 = stRect.y1 + HEIGHT_ELT * 2
+      		stFullRect.y2 = stRect.y2 + HEIGHT_ELT * 2
+      		
+      		// If a title or a description was specified
+      		IF pclEvt.p_Description <> “” _OR_ pclEvt.p_Title <> “” THEN
+      			
+      			// Keeps the rectangle of the title box
+      			m_aaFullRectangles[pclEvt.UID] = stFullRect
+      			
+      			// Title Box
+      			dRectangle(stFullRect.x1 , stFullRect.y1, stFullRect.x2, stFullRect.y2, m_nBackgroundColor, DarkGray)	
+      			
+      			// Displays the title if it exists
+      			IF pclEvt.p_Title <> “” THEN
+      				
+      				// Bold font
+      				fntFont..Bold = True
+      				fntFont..Italic = False
+      				dFont(fntFont)	
+      				
+      				// Displays the title
+      				dAdvancedText(DC, stFullRect.x1 + 4, stFullRect.y1 + 2, stFullRect.x2 - 4, stFullRect.y1 + 14, (pclEvt.p_Title), DT_TOP + DT_LEFT + DT_SINGLELINE + DT_MODIFYSTRING + DT_END_ELLIPSIS + DT_EDITCONTROL)					
+      			END
+      			
+      			IF pclEvt.p_Description <> “” THEN
+      				
+      				// Font of the description
+      				fntFont..Bold = False			
+      				fntFont..Italic = True			
+      				dFont(fntFont)	
+      				
+      				// Displays the description
+      				dAdvancedText(DC, stFullRect.x1 + 4, stFullRect.y1 + 2 + (pclEvt.p_Title <> “” ? 14 ELSE 0), stFullRect.x2 - 4, stFullRect.y2 - 2, (pclEvt.p_Description), DT_TOP + DT_LEFT + DT_MODIFYSTRING + DT_END_ELLIPSIS + DT_EDITCONTROL)
+      			END
+      		END
+      	ELSE
+      		
+      		// Small rectangle
+      		dRectangle(stRect.x1, stRect.y1, stRect.x2, stRect.y2, pclEvt.p_Color, pclEvt.p_Color)		
+      	END
+      	
+      END
+      
+      // Keeps the list of visible events
+      m_arrVisibleEvents = arrEvt	
+      
+      // If we have a synchronized timeline
+      IF m_pclSynchronizedTimeline <> Null THEN
+      	
+      	// Assigns the same events to the synchronized timeline
+      	m_pclSynchronizedTimeline.p_Events = p_Events
+      	
+      	// Selected date and time
+      	m_pclSynchronizedTimeline.p_DateTimeSelect = m_dtDateTimeSelect
+      	
+      	// Colors
+      	m_pclSynchronizedTimeline.p_Color = m_nColor
+      	m_pclSynchronizedTimeline.p_BackgroundColor = m_nBackgroundColor
+      	
+      	// Font
+      	m_pclSynchronizedTimeline.p_Font = m_fntFont
+      	
+      	// Zoom for distance
+      	m_pclSynchronizedTimeline.p_ZoomDistance = m_rZoomDist
+      	
+      	// Callback
+      	m_pclSynchronizedTimeline.p_Callback = p_Callback
+      	
+      	//Status
+      	m_pclSynchronizedTimeline.p_State = (m_bMoveAuthorized ? Active ELSE Inactive)
+      	
+      	// Displays the synchronized timeline
+      	m_pclSynchronizedTimeline.Displays()
+      END
+     type : 458752
+   -
+     name : DateToPosition
+     procedure_id : 1952238386098447303
+     type_code : 12
+     code : |1-
+      // Summary: Returns the position (subscript or real position) of a DateTime
+      // Syntax:
+      //[ <Result> = ] DateToPosition (<dtDate> is datetime [, <bPrecise> is boolean])
+      //
+      // Parameters:
+      //	dtDate (datetime): DateTime whose position must be returned
+      //	bPrecise (boolean - default value=0): False (by default) to return the subscript, True to return the real position
+      // Return value:
+      // 	real:  Position of the DateTime
+      //
+      Procedure DateToPosition(LOCAL dtDate is datetime, LOCAL bPrecise is boolean = False)
+      
+      rPosition	is real
+      duDuration		is duration
+      dtStart		is datetime
+      
+      // Precise position in pixels
+      IF bPrecise THEN
+      	
+      	// Based on the adjusted minimum date
+      	dtStart		= m_dtMinAdjustedDateTime
+      	
+      	RESULT DurationToPixels(dtStart, dtDate)
+      	
+      	// Corresponding index
+      ELSE
+      	
+      	dtStart		= m_dtMinDateTime
+      	
+      	// Effective duration
+      	duDuration		= dtDate - dtStart
+      	
+      	// According to the zoom
+      	SWITCH p_Zoom
+      		CASE zoomDecades			
+      			rPosition = dtDate..Year / 10 - dtStart..Year / 10 						
+      			
+      		CASE zoomYears
+      			rPosition = dtDate..Year - dtStart..Year			
+      			
+      		CASE zoomMonths
+      			rPosition = dtDate..Year * 12 + dtDate..Month - dtStart..Year * 12 - dtStart..Month
+      			
+      		CASE zoomDays
+      			rPosition = duDuration..InDays - 1
+      			
+      		CASE zoomHours
+      			rPosition = (duDuration..InMinutes - 1) / 60
+      			
+      		CASE zoomMinutes10
+      			rPosition = (duDuration..InMinutes - 1) / 10
+      			
+      		CASE zoomMinutes 
+      			rPosition = (duDuration..InMinutes	- 1)
+      	END
+      END
+      
+      RESULT rPosition
+     type : 458752
+   -
+     name : DurationToPixels
+     procedure_id : 1952238386098512901
+     type_code : 12
+     code : |1-
+      // Summary: Defines the length of a duration in pixels
+      // Syntax:
+      //[ <Result> = ] DurationToPixels (<dtStart> is datetime, <dtEnd> is datetime)
+      //
+      // Parameters:
+      //	dtStart (datetime): Start DateTime
+      //	dtEnd (datetime): End DateTime
+      // Return value:
+      // 	real:  Length in pixels
+      //
+      Procedure PRIVATE DurationToPixels(LOCAL dtStart is datetime, LOCAL dtEnd is datetime)
+      
+      rPixels	is real
+      duDuration	is duration
+      
+      // Duration of the event
+      duDuration = dtEnd - dtStart
+      
+      // According to the zoom
+      SWITCH p_Zoom
+      
+      	// Decades
+      	CASE zoomDecades			
+      		rPixels = ((duDuration..InDays / 365) / 10) * m_nWidthIntervals
+      		
+      	// Years
+      	CASE zoomYears			
+      		rPixels = (duDuration..InDays / 365) * m_nWidthIntervals
+      		
+      	// Month
+      	CASE zoomMonths			
+      		rPixels = ((duDuration..InDays / 365) * 12) * m_nWidthIntervals
+      		
+      	// Days
+      	CASE zoomDays			
+      		rPixels = duDuration..InDays * m_nWidthIntervals
+      		
+      	// Hours
+      	CASE zoomHours
+      		rPixels = duDuration..InHours * m_nWidthIntervals
+      		
+      	// 10x minutes
+      	CASE zoomMinutes10
+      		rPixels = (duDuration..InMinutes / 10) * m_nWidthIntervals
+      		
+      	// Minutes
+      	CASE zoomMinutes
+      		rPixels = duDuration..InMinutes * m_nWidthIntervals
+      		
+      END
+      
+      RESULT rPixels
+     type : 458752
+   -
+     name : DetectSuperposition
+     procedure_id : 1952238386098578500
+     type_code : 12
+     group : 2
+     code : |1-
+      // Summary: Detects a superposition of display between several events
+      // Syntax:
+      //[ <Result> = ] DetectSuperposition (<stRect> is RECT, <arrEvt> is array, <pclCurrentEvt> is dynamic TimelineEvent)
+      //
+      // Parameters:
+      //	stRect (RECT): Rectangle of the event to compare
+      //	arrEvt (array): List of events on which the comparison must be performed
+      //	pclCurrentEvt (dynamic TimelineEvent): Event to compare
+      // Return value:
+      // 	boolean:    True if the event to compare is superposed with another event, False otherwise
+      //
+      Procedure PRIVATE DetectSuperposition(LOCAL stRect is RECT, arrEvt is array of * TimelineEvent dynamic, pclCurrentEvt is TimelineEvent dynamic)
+      
+      stEvtRect is RECT
+      stCmpRect is RECT
+      pclEvt	  is TimelineEvent dynamic
+      
+      IF stRect.x2 < stRect.x1 THEN
+      	stRect.x1 <=> stRect.x2
+      END
+      
+      IF stRect.y2 < stRect.y1 THEN
+      	stRect.y1 <=> stRect.y2
+      END
+      
+      Sort(arrEvt, asMember, “+m_dtStartDate”)
+      
+      FOR EACH pclEvt of arrEvt
+      	
+      	// If it is not the current object
+      	IF pclEvt.UID <> pclCurrentEvt.UID THEN
+      		
+      		// -> only if the event is older than the current event
+      		IF pclEvt.p_StartDate <= pclCurrentEvt.p_StartDate _OR_ pclCurrentEvt.p_StartDate <= pclEvt.p_EndDate <= pclCurrentEvt.p_EndDate THEN
+      			
+      			// Retrieves the rectangle of the event
+      			IF m_aaRectangles[pclEvt.UID] <> Null THEN
+      				
+      				stEvtRect = m_aaRectangles[pclEvt.UID]
+      				
+      				IF m_aaFullRectangles[pclEvt.UID] <> Null THEN
+      					stCmpRect = m_aaFullRectangles[pclEvt.UID]
+      				ELSE
+      					stCmpRect = stEvtRect
+      				END
+      				
+      				IF stCmpRect.x2 < stCmpRect.x1 THEN
+      					stCmpRect.x1 <=> stCmpRect.x2
+      				END
+      				
+      				IF stCmpRect.y2 < stCmpRect.y1 THEN
+      					stCmpRect.y1 <=> stCmpRect.y2
+      				END					
+      				
+      				// Defines whether the two rectangles are superposed
+      				// -> same vertical position?
+      				IF stEvtRect.y1 - HEIGHT_ELT * 2 <= stRect.y1 <= stEvtRect.y1 + HEIGHT_ELT * 2 THEN
+      					
+      					// -> is one of the rectangle sides located in the interval of the current rectangle?
+      					IF (stEvtRect.x1 - HEIGHT_ELT * 2 <= stRect.x1 <= stEvtRect.x2 + HEIGHT_ELT * 2 _OR_ stEvtRect.x1 - HEIGHT_ELT * 2 <= stRect.x2 <= stEvtRect.x2 + HEIGHT_ELT * 2) _OR_
+      						(stCmpRect.x1 - HEIGHT_ELT * 2 <= stRect.x1 <= stCmpRect.x2 + HEIGHT_ELT * 2 _OR_ stCmpRect.x1 - HEIGHT_ELT * 2 <= stRect.x2 <= stCmpRect.x2 + HEIGHT_ELT * 2)  THEN
+      						
+      						RESULT True
+      					END
+      				END
+      			END
+      		END
+      	END
+      END
+      
+      RESULT False
+     type : 458752
+   -
+     name : ListEvents
+     procedure_id : 1952238386098644161
+     type_code : 12
+     code : |1-
+      // Summary: Retrieves the displayable events between two dates
+      // Syntax:
+      //[ <Result> = ] ListEvents (<dtStart> is DateTime, <dtEnd> is DateTime)
+      //
+      // Parameters:
+      //	dtStart (DateTime): Start
+      //	dtEnd (DateTime): End
+      // Return value:
+      // 	array:  List of events included between the two dates
+      //
+      Procedure PRIVATE ListEvents(LOCAL dtStart is datetime, LOCAL dtEnd is datetime)
+      
+      arrEvt is array of TimelineEvent dynamic
+      pclEvt is TimelineEvent dynamic
+      
+      // Browses the events
+      FOR EACH pclEvt of m_arrEvents
+      	
+      	// If the event is found between the bounds
+      	IF pclEvt.p_StartDate < dtEnd _OR_ (pclEvt.p_EndDate > dtStart _AND_ pclEvt.p_StartDate < dtEnd) THEN
+      		
+      		// Keeps the event for the display
+      		Add(arrEvt, pclEvt)						
+      	END
+      END	
+      
+      RESULT arrEvt
+     type : 458752
+   -
+     name : PositionToDate
+     procedure_id : 1952238386098709743
+     type_code : 12
+     code : |1-
+      // Summary: Converts a position (subscript or real position) into a DateTime
+      // Syntax:
+      //[ <Result> = ] PositionToDate (<rPosition> is real [, <bPrecise> is boolean])
+      //
+      // Parameters:
+      //	rPosition (real): Given position (subscript or position in pixels)
+      //	bPrecise (boolean - default value=0): True if the position is a position in pixels, False if the position is a subscript
+      // Return value:
+      // 	datetime:  Corresponding DateTime
+      //
+      Procedure PositionToDate(LOCAL rPosition is real, LOCAL bPrecise is boolean = False)
+      
+      dtDateTime		is datetime
+      dtStart			is datetime
+      rNbSeconds		is real
+      nNbSeconds		is 8-byte unsigned int
+      duDuration			is duration
+      
+      // Precise calculation (rPosition is a position in pixels)
+      IF bPrecise THEN
+      	
+      	dtStart		= m_dtMinAdjustedDateTime
+      	
+      	// Departure date
+      	dtDateTime = dtStart
+      	
+      	// Calculates the number of seconds between the start date of the timeline and the current position
+      	rNbSeconds = rPosition / SecondWidth(*, *, dtStart..Date)
+      	
+      	// Caste the duration to integer			
+      	nNbSeconds = rNbSeconds
+      	
+      	// Assign the duration with the number of seconds * 1000 (data in milliseconds)
+      	// (See the documentation about the Duration type: If a Duration variable is handled by an integer, this integer corresponds to the number of milliseconds of the duration.)
+      	duDuration = nNbSeconds * 1000
+      	
+      	// Adds the calculated duration
+      	dtDateTime += duDuration
+      	
+      	RESULT dtDateTime
+      ELSE
+      	
+      	dtStart		= m_dtMinDateTime
+      	
+      	// According to the zoom
+      	SWITCH p_Zoom
+      	
+      		CASE zoomDecades
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to 1 month
+      			dtDateTime..Month 		= 1
+      			dtDateTime..Day 		= 1
+      			dtDateTime..Hour 		= 0
+      			dtDateTime..Minute 	= 0
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the decade according to the position (index)
+      			dtDateTime..Year += rPosition * 10
+      			dtDateTime..Year -= modulo(dtDateTime..Year, 10)				
+      			
+      		CASE zoomYears
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to 1 day
+      			dtDateTime..Month 		= 1
+      			dtDateTime..Day 		= 1
+      			dtDateTime..Hour 		= 0
+      			dtDateTime..Minute 	= 0
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the year according to the position (index)
+      			dtDateTime..Year += rPosition
+      			
+      		CASE zoomMonths
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to 1 day
+      			dtDateTime..Day  		= 1
+      			dtDateTime..Hour 		= 0
+      			dtDateTime..Minute 	= 0
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the month according to the position (index)
+      			dtDateTime..Month += rPosition
+      			
+      		CASE zoomDays
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to 1 hour
+      			dtDateTime..Hour 		= 0
+      			dtDateTime..Minute 	= 0
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the day according to the position (index)
+      			dtDateTime..Day += rPosition
+      			
+      		CASE zoomHours
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to 1 minute
+      			dtDateTime..Minute 	= 0
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the time according to the position (index)
+      			dtDateTime..Hour += rPosition	
+      			
+      			
+      		CASE zoomMinutes10
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to one second
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the tens of minutes according to the position (index)
+      			dtDateTime..Minute += rPosition * 10
+      			dtDateTime..Minute -= modulo(dtDateTime..Minute, 10)
+      			
+      		CASE zoomMinutes
+      			
+      			dtDateTime = dtStart
+      			
+      			// Precision to one second
+      			dtDateTime..Second 	= 0
+      			
+      			// Increments the minute according to the position (index)
+      			dtDateTime..Minute += rPosition
+      	END
+      END
+      
+      RESULT dtDateTime
+     type : 458752
+   -
+     name : OnMouseWheel
+     procedure_id : 1952281108147497025
+     type_code : 12
+     group : 4
+     code : |1-
+      // Summary: Managing the WM_MOUSEWHEEL event
+      // Syntax:
+      // OnMouseWheel ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE OnMouseWheel()
+      
+      nSx, nSy are int
+      
+      // Coordinates of the mouse
+      nSx = LoWord(_EVE.lParam) - WinInXPos
+      nSy = HiWord(_EVE.lParam) - WinInYPos
+      
+      // Defines whether the wheel was moved on the control
+      IF NOT {m_sControl, indControl}..X <= nSx <= {m_sControl, indControl}..X + {m_sControl, indControl}..Width THEN RETURN
+      IF NOT {m_sControl, indControl}..Y <= nSy <= {m_sControl, indControl}..Y + {m_sControl, indControl}..Height THEN RETURN
+      
+      nWheelDirection is int = HiWord(_EVE.wParam) / 120
+      
+      // Bounds
+      IF nWheelDirection < -6 THEN nWheelDirection = -6
+      IF nWheelDirection > 6  THEN nWheelDirection = 6
+      
+      nMove  is int = (nWheelDirection * m_nWidthIntervals)
+      
+      MoveTimeline(nMove)
+     type : 458752
+   -
+     name : SynchronizeOffset
+     procedure_id : 1952299129822866894
+     type_code : 12
+     code : |1-
+      // Summary: Synchronizes the offset of the timeline (mainly used to synchronize two timelines)
+      // Syntax:
+      //SynchronizeOffset (<rOffset> is real [, <dtReferenceDateTime> is datetime])
+      //
+      // Parameters:
+      //	rOffset (real): Offset to apply (in seconds)
+      //	dtReferenceDateTime (datetime): Reference DataTime for the offset (the smallest displayable DateTime by default)
+      // Return value:
+      // 	None
+      //
+      PROCEDURE SynchronizeOffset(LOCAL rOffset is real, LOCAL dtReferenceDateTime is datetime = m_dtMinRealDateTime)	
+      
+      IF m_bMoveAutoAuthorized THEN
+      	
+      	// Calculates the number of pixels to offset
+      	rOffsetSynchro is real = rOffset * SecondWidth(*, *, dtReferenceDateTime..Date)
+      	
+      	// Applies the offset
+      	p_Offset += rOffsetSynchro		
+      END
+     type : 458752
+   -
+     name : SecondWidth
+     procedure_id : 1952555023984199294
+     type_code : 12
+     code : |1-
+      // Summary: Calculates the representation of a second (in pixels) in the current zoom from a reference date
+      // Syntax:
+      //[ <Result> = ] SecondWidth ([<nZoom> is int [, <nWidthElt> is int [, <dYearDate> is date]]])
+      //
+      // Parameters:
+      //	nZoom (integer): Zoom (current zoom by default)
+      //	nWidthElt (integer): Width of the intervals between each element (current width by default)
+      //	dYearDate (date): Reference date
+      // Return value:
+      // 	real:       Width of a second (in pixels)
+      //
+      Procedure PRIVATE SecondWidth(LOCAL nZoom is int = m_nZoom, LOCAL nWidthElt is int = m_nWidthIntervals, LOCAL dYearDate is date = m_dtMinRealDateTime..Date)
+      
+      rSourceDistance is real
+      dStartDateYear	   is date = dYearDate
+      dEndDateYear	   is date = dYearDate
+      duDurationYear	   is duration
+      nNbSecondsYear   is unsigned int // By default: = 3600 * 24 * 31 * 12 
+      nNbSecondsMonth	   is unsigned int // By default: = 3600 * 24 * 31
+      nNbSecondsDay	   is unsigned int = 3600 * 24
+      
+      // First day of the year
+      dStartDateYear..Month = 1
+      dStartDateYear..Day = 1
+      
+      // Last day of the year	
+      dEndDateYear..Month = 12
+      dEndDateYear..Day = 31
+      
+      // Calculates the duration of the year
+      duDurationYear = dEndDateYear - dStartDateYear
+      
+      // Defines the number of seconds in this year...
+      nNbSecondsYear = duDurationYear..InSeconds
+      
+      //... and for a month (average)
+      nNbSecondsMonth = nNbSecondsYear / 12
+      
+      // Calculates the distance (in pixels) required to move from one second according to the zoom
+      SWITCH nZoom
+      	CASE zoomDecades		: rSourceDistance = (nWidthElt  		/ nNbSecondsYear / 10) 
+      	CASE zoomYears		: rSourceDistance = (nWidthElt 		/ nNbSecondsYear) 
+      	CASE zoomMonths		: rSourceDistance = (nWidthElt 		/ nNbSecondsMonth) 
+      	CASE zoomDays		: rSourceDistance = (nWidthElt 		/ nNbSecondsDay) 
+      	CASE zoomHours		: rSourceDistance = (nWidthElt 		/ 3600) 
+      	CASE zoomMinutes10	: rSourceDistance = ((nWidthElt / 10) 	/ 60) 
+      	CASE zoomMinutes		: rSourceDistance = (nWidthElt 		/ 60) 
+      END
+      
+      RESULT rSourceDistance
+     type : 458752
+   -
+     name : DateAdjust
+     procedure_id : 1953720102582656006
+     type_code : 12
+     code : |1-
+      // Summary: Adjusts a date according to the zoom
+      // Syntax:
+      //DateAdjust (<dtDateTime> is datetime)
+      //
+      // Parameters:
+      //	dtDateTime (datetime): DateTime to adjust
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE DateAdjust(dtDateTime is datetime)
+      
+      // Adjusts the minimum date according to the zoom
+      SWITCH p_Zoom
+      
+      	// Decades: precision to the ten of years
+      	CASE zoomDecades
+      		dtDateTime..Year -= modulo(dtDateTime..Year, 10)			
+      		dtDateTime..Month  = 1
+      		dtDateTime..Day  = 1
+      		dtDateTime..Hour  = 0
+      		dtDateTime..Minute = 0
+      		dtDateTime..Second = 0
+      		
+      	// Years: precision to the year
+      	CASE zoomYears
+      		dtDateTime..Month  = 1
+      		dtDateTime..Day  = 1
+      		dtDateTime..Hour  = 0
+      		dtDateTime..Minute = 0
+      		dtDateTime..Second = 0
+      		
+      	// Months: precision to the month
+      	CASE zoomMonths
+      		dtDateTime..Day  = 1
+      		dtDateTime..Hour = 0		
+      		dtDateTime..Minute = 0
+      		dtDateTime..Second = 0	
+      		
+      	// Days: precision to the day
+      	CASE zoomDays
+      		dtDateTime..Hour  = 0
+      		dtDateTime..Minute = 0
+      		dtDateTime..Second = 0
+      		
+      	// Hours: precision to the hour
+      	CASE zoomHours
+      		dtDateTime..Minute  = 0
+      		dtDateTime..Second = 0
+      		
+      	// 10x minutes: precision to the ten of minutes
+      	CASE zoomMinutes10
+      		dtDateTime..Minute  -= modulo(dtDateTime..Minute, 10)
+      		dtDateTime..Second = 0			
+      		
+      	// Minutes: precision to the minute
+      	CASE zoomMinutes			
+      		dtDateTime..Second = 0
+      END
+     type : 458752
+   -
+     name : OnDoubleClick
+     procedure_id : 1953741349821879659
+     type_code : 12
+     group : 4
+     code : |1-
+      // Summary: Managing the WM_LBUTTONDBLCLK and WM_RBUTTONDBLCLK events
+      // Syntax:
+      // OnDoubleClick ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure PRIVATE OnDoubleClick()
+      
+      // Triggers a rollover first
+      Rollover()
+      
+      // No event is hovered	
+      IF m_pclEventHovered = Null THEN
+      	
+      	AnimationPrepare(ParentObject(m_sControl))
+      	
+      	// Double 'left' click
+      	IF _EVE.wMessage = WM_LBUTTONDBLCLK THEN	
+      		
+      		// Increases the zoom
+      		p_ZoomDistance = Min(4, p_ZoomDistance + 0.5)
+      		
+      		// Double 'right' click
+      	ELSE
+      		
+      		// Reduces the zoom
+      		p_ZoomDistance = Max(0.5, p_ZoomDistance - 0.5)
+      	END
+      	
+      	// Returns the zoom on the parent timeline
+      	IF m_pclParentTimeline <> Null THEN
+      		m_pclParentTimeline.p_ZoomDistance = p_ZoomDistance
+      	END
+      	
+      	AnimationPlay(animFadeIn)
+      	
+      ELSE
+      	
+      	// If a callback was specified
+      	IF p_Callback <> “” THEN
+      		
+      		WHEN EXCEPTION IN
+      			// Call to the callback
+      			ExecuteProcess(p_Callback, trtProcedure, m_pclEventHovered)
+      		DO
+      		END
+      	END
+      END
+     type : 458752
+   -
+     name : IntervalWidth
+     procedure_id : 1954049157202615559
+     type_code : 12
+     code : |1-
+      // Summary: Returns the width of an interval
+      // Syntax:
+      //[ <Result> = ] IntervalWidth ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	integer: Width of a date interval
+      //
+      Procedure IntervalWidth()
+      RESULT m_nWidthIntervals
+     type : 458752
+   -
+     name : IntervalPrevious
+     procedure_id : 1954050441400626454
+     type_code : 12
+     code : |1-
+      // Summary: <specify the action of the procedure>
+      // Syntax:
+      //IntervalPrevious ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure IntervalPrevious()
+      
+      IF m_pclSynchronizedTimeline <> Null THEN
+      	m_pclSynchronizedTimeline.MoveTimeline(m_pclSynchronizedTimeline.IntervalWidth())
+      ELSE
+      	MoveTimeline(IntervalWidth())
+      END
+     type : 458752
+   -
+     name : IntervalNext
+     procedure_id : 1954050772113185997
+     type_code : 12
+     code : |1-
+      // Summary: <specify the action of the procedure>
+      // Syntax:
+      //IntervalNext ()
+      //
+      // Parameters:
+      //	None
+      // Return value:
+      // 	None
+      //
+      Procedure IntervalNext()
+      
+      IF m_pclSynchronizedTimeline <> Null THEN
+      	m_pclSynchronizedTimeline.MoveTimeline(-m_pclSynchronizedTimeline.IntervalWidth())
+      ELSE
+      	MoveTimeline(-IntervalWidth())
+      END
+     type : 458752
+   -
+     name : MoveTimeline
+     procedure_id : 1954051132890653206
+     type_code : 12
+     code : |1-
+      // Summary: Moves the timeline
+      // Syntax:
+      //MoveTimeline (<nMove> is real [, <nStep> is int])
+      //
+      // Parameters:
+      //	nMove (real): Total move in pixels
+      //	nStep (integer): Step for the move
+      // Return value:
+      // 	None
+      //
+      Procedure MoveTimeline(LOCAL nMove is real, LOCAL nStep is int = SWITCH(m_nZoom, 5, 6, 4, 6, 6, 6, 6))
+      
+      m_rPreviousOffset = p_Offset
+      nMove = nMove / nStep
+      
+      IF nMove <> 0 THEN
+      	
+      	LOOP (nStep)
+      		
+      		// Retrieves the current position
+      		nNewPos is int = p_Offset
+      		
+      		// Calculates the new position
+      		nNewPos += nMove
+      		
+      		// If the new position makes that the right side of the control is positioned
+      		// below the width of the template, recalculate the position in order for the control
+      		// to be positioned properly
+      		IF nNewPos + m_nMaxWidth <= m_nTimeLineWidth THEN		
+      			
+      			// Stay on the right
+      			nNewPos -= m_nMaxWidth - m_nTimeLineWidth
+      			BREAK
+      			
+      			// If the new position makes that the left side of the control is positioned
+      			// beyond 0 (left side of the template), recalculate position in order for the control
+      			// to be positioned properly
+      		ELSE IF nNewPos >= 0 THEN
+      			
+      			// Stay on the left
+      			nNewPos = 0
+      			BREAK
+      			
+      		END
+      		
+      		// If the new position differs from the previous one
+      		IF m_rOffset <> nNewPos THEN
+      			
+      			// Keeps the new position
+      			p_Offset = nNewPos			
+      		END
+      	END
+      	
+      	// Keeps the new position
+      	p_Offset = m_rPreviousOffset + nMove * nStep	
+      END		
+      
+      // Refreshes the timeline
+      Displays()
+      
+      // Refresh
+      Wait(0, waitRedraw)	
+     type : 458752
+   -
+     name : GoTo_
+     procedure_id : 1954053057036253038
+     type_code : 12
+     code : |1-
+      // Summary: Position on a given date
+      // Syntax:
+      //GoTo_ (<dtDateTime> is datetime)
+      //
+      // Parameters:
+      //	dtDateTime (datetime): New position
+      // Return value:
+      // 	None
+      //
+      Procedure GoTo_(LOCAL dtDateTime is datetime)
+      
+      rMove is real
+      rOffset is real
+      
+      // No date greater than the maximum date can be selected
+      IF dtDateTime > p_MaxDateTime THEN
+      	dtDateTime = p_MaxDateTime
+      	rOffset     = SWITCH(m_nZoom, 10, 12, 31, 24, 60, 60, 60)
+      	rOffset     = (rOffset - 1) * IntervalWidth()
+      	
+      	// No date less than the minimum date can be selected
+      ELSE IF dtDateTime < p_MinDateTime THEN
+      	dtDateTime = p_MinDateTime
+      END
+      
+      IF m_pclSynchronizedTimeline <> Null THEN
+      	
+      	// Calculates the move to perform
+      	rMove = m_pclSynchronizedTimeline.DateToPosition(dtDateTime, True) - rOffset
+      	
+      	// Defines the move to perform
+      	rMove = -(m_pclSynchronizedTimeline.p_Offset + rMove)
+      	
+      	m_pclSynchronizedTimeline.MoveTimeline(rMove)
+      	
+      ELSE
+      	
+      	// Calculates the move to perform
+      	rMove = DateToPosition(dtDateTime, True) - rOffset
+      	MoveTimeline(p_Offset + rMove)
+      	
+      END
+     type : 458752
+  properties :
+   -
+     name : p_MinDateTime
+     identifier : 0x1b17bf77005a88f7
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_MinDateTime()
+         RESULT m_dtMinDateTime
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_MinDateTime(dtDate is datetime)
+         
+         // Keeps the date
+         IF dtDate <> m_dtMinDateTime THEN
+         	m_dtMinDateTime = dtDate
+         	
+         	IF m_pclParentTimeline = Null THEN
+         		
+         		// Refresh
+         		Displays()
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_MaxDateTime
+     identifier : 0x1b17bf8f005be559
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_MaxDateTime()
+         RESULT m_dtMaxDateTime
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_MaxDateTime(dtDate is datetime)
+         
+         // Keeps the date
+         IF dtDate <> m_dtMaxDateTime THEN
+         	m_dtMaxDateTime = dtDate
+         	
+         	IF m_pclParentTimeline = Null THEN
+         		
+         		// Refresh
+         		Displays()
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Events
+     identifier : 0x1b17bfa8005c47a4
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Events()
+         RESULT m_arrEvents
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Events(arrEvents is array of * TimelineEvent dynamic)
+         
+         // Keeps the events
+         ArrayCopy(arrEvents, m_arrEvents)
+         
+         IF m_pclParentTimeline = Null THEN
+         	
+         	// Refresh
+         	Displays()
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Zoom
+     identifier : 0x1b17bfc2005dad87
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Zoom()
+         RESULT m_nZoom
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Zoom(nZoom is int)
+         
+         IF 1 <= nZoom <= 7 THEN
+         	
+         	// Keeps the zoom
+         	IF nZoom <> m_nZoom THEN
+         		m_nZoom = nZoom	
+         		
+         		IF m_pclParentTimeline = Null THEN
+         			
+         			// Refresh
+         			Displays()
+         		END
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Offset
+     identifier : 0x1b17ed4000f46036
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Offset()
+         RESULT m_rOffset
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Offset(rOffset is real)
+         
+         rDiff is real
+         
+         // Bounds
+         rOffset = Min(rOffset, 0)
+         
+         // If the automatic move is allowed
+         IF m_bMoveAutoAuthorized THEN
+         	
+         	// If the offset is different
+         	IF m_rOffset <> rOffset THEN
+         		
+         		// Calculates the move
+         		rDiff = rOffset - m_rOffset
+         		
+         		// Calculates the number of seconds moved
+         		rDiff = rDiff / SecondWidth(*, *, m_dtMinRealDateTime..Date)
+         		
+         		// Keeps the offset			
+         		m_rOffset = rOffset
+         		
+         		// Displays
+         		Displays()
+         		
+         		// Prevents the synchronized timeline from modifying the offset
+         		m_bMoveAutoAuthorized = False
+         		
+         		// If another timeline is synchronized
+         		IF m_pclSynchronizedTimeline <> Null THEN
+         			
+         			// Synchronizes the offset with this timeline
+         			m_pclSynchronizedTimeline.SynchronizeOffset(rDiff, m_dtMinRealDateTime)
+         		END		
+         		
+         		IF m_pclParentTimeline <> Null THEN
+         			
+         			// Synchronizes the offset with the parent timeline
+         			m_pclParentTimeline.SynchronizeOffset(rDiff, m_dtMinRealDateTime)				
+         		END
+         		
+         		// Re-allows the synchronized timeline to modify the offset
+         		m_bMoveAutoAuthorized = True
+         	END
+         	
+         	Wait(0, waitRedraw)
+         END	
+        type : 2031616
+     template_refs : []
+   -
+     name : p_SynchronizedTimeline
+     identifier : 0x1b17f5eb00663b68
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_SynchronizedTimeline()
+         RESULT m_pclSynchronizedTimeline
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_SynchronizedTimeline(pclTimeline is Timeline dynamic)
+         
+         // Cancels the relationship with the previous timeline
+         IF pclTimeline = Null _AND_ m_pclSynchronizedTimeline <> Null THEN
+         	m_pclSynchronizedTimeline.p_ParentTimeline = Null
+         END
+         
+         // Keeps the new timeline
+         m_pclSynchronizedTimeline = pclTimeline
+         
+         IF pclTimeline <> Null THEN
+         	
+         	// Describes the relationship
+         	m_pclSynchronizedTimeline.p_ParentTimeline = object
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_ParentTimeline
+     identifier : 0x1b190a54015beacf
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_ParentTimeline()
+         RESULT m_pclParentTimeline
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_ParentTimeline(pclTimeline is Timeline dynamic)
+         m_pclParentTimeline = pclTimeline
+        type : 2031616
+     template_refs : []
+   -
+     name : p_DateTimeSelect
+     identifier : 0x1b1d003200f33ca8
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_DateTimeSelect()
+         RESULT m_dtDateTimeSelect
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_DateTimeSelect(LOCAL dtDate is datetime)
+         
+         // Keeps the DateTime
+         IF dtDate <> m_dtDateTimeSelect THEN
+         	
+         	// No date greater than the maximum date can be selected
+         	IF dtDate > p_MaxDateTime THEN
+         		dtDate = p_MaxDateTime
+         		
+         		// No date less than the minimum date can be selected
+         	ELSE IF dtDate < p_MinDateTime THEN
+         		dtDate = p_MinDateTime
+         	END
+         	
+         	m_dtDateTimeSelect = dtDate
+         	
+         	IF m_pclParentTimeline = Null THEN
+         		
+         		// Refresh
+         		Displays()
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_State
+     identifier : 0x1b1d035a00fc9034
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_State()
+         RESULT (m_bMoveAuthorized ? Active ELSE Inactive)
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_State(nStatus is int)
+         
+         IF (nStatus = Active) <> m_bMoveAuthorized THEN
+         	
+         	// Only the Active status allows the move
+         	m_bMoveAuthorized = (nStatus = Active)
+         	
+         	// Refreshes the display
+         	Displays()	
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Color
+     identifier : 0x1b1d0c83017058df
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Color()
+         RESULT m_nColor
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Color(nColor is int)
+         
+         IF nColor <> m_nColor THEN
+         	m_nColor = nColor
+         	
+         	// Refreshes the display
+         	IF m_pclParentTimeline = Null THEN
+         		Displays()
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_BackgroundColor
+     identifier : 0x1b1d0ca50171dc22
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_BackgroundColor()
+         RESULT m_nBackgroundColor
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_BackgroundColor(nColor is int)
+         
+         IF nColor <> m_nBackgroundColor THEN
+         	m_nBackgroundColor = nColor
+         	
+         	// Refreshes the display
+         	IF m_pclParentTimeline = Null THEN
+         		Displays()
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_SelectionColor
+     identifier : 0x1b1d0efd01b204b8
+     type_code : 103
+     p_codes :
+      -
+        internal_properties : CAAAAAgAAACN1sGc5uSoy8oJQ/0VxngZudrvgPpTaEj8CGGmo/2c9/uXvANFNUjo+9hVUwOdsseMhcFaw+ucgOj3KQJUjY8nNzV5Krr+MxyX+J9Z+P/FB0dC2yrhFkVjrcAUm1TpwyZsS80ib+UfiLqHWoVCx2E+loXIROIl9bIFuAtb4CltR5mmNSFcxUpKFSHXWBVKOn7MOmeOIBUNyzwKR60d3UAfYjW+75PDelWTKi9hJTVf2nXJZGiMV6vNmoo7R1c9Z05vepZ5zylTwzpmqn4B/cMddAXBlpXaiVcbIcaqaJ38ON6GIJAtBVPytMf4890jSHqTNNnBOKIThuXugRVDUHBh4KtwZw==
+        code : |1-
+         Procedure p_SelectionColor()
+         RESULT m_nSelectionColor
+        type : 1966080
+      -
+        internal_properties : CAAAAAgAAACN1sGc5uSoy8oJQ/0VxngZudrvgPpTaEj8CGGmo/2c9/uXvANFNUjo+9hVUwOdsseMhcFaw+ucgOj3KQJUjY8nNzV5Krr+MxyX+J9Z+P/FB0dC2yrhFkVjrcAUm1TpwyZsS80ib+UfiLqHWoVCx2E+loXIROIl9bIFuAtb4CltR5mmNSFcxUpKFSHXWBVKOn7MOmeOIBUNyzwKR60d3UAfYjW+75PDelWTKi9hJTVf2nXJZGiMV6vNmoo7R1c9Z05vepZ5zylTwzpmqn4B/cMddAXBlpXaiVcbIcaqaJ38ON6GIJAtBVPytMf4890jSHqTNNnBOKIThuXugRVDUHBh4KtwZw==
+        code : |1-
+         Procedure p_SelectionColor(nColor is int)
+         m_nSelectionColor = nColor
+         
+         // Refreshes the display
+         IF m_pclParentTimeline = Null THEN
+         	Displays()
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_ZoomDistance
+     identifier : 0x1b1d158a03219a62
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_ZoomDistance()
+         RESULT m_rZoomDist
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_ZoomDistance(rZoom is real)
+         
+         IF rZoom <> m_rZoomDist THEN
+         	m_rZoomDist = rZoom
+         	
+         	// Refresh
+         	IF m_pclParentTimeline = Null THEN
+         		Displays()
+         	END
+         END
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Font
+     identifier : 0x1b1d19270349b755
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Font()
+         RESULT m_fntFont
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Font(fntFont)
+         
+         m_fntFont = fntFont
+         
+         // Refresh
+         IF m_pclParentTimeline = Null THEN
+         	Displays()
+         END	
+        type : 2031616
+     template_refs : []
+   -
+     name : p_Callback
+     identifier : 0x1b1e265f005b56a5
+     type_code : 103
+     p_codes :
+      -
+        code : |1-
+         Procedure p_Callback()
+         RESULT m_sCallbackClick
+        type : 1966080
+      -
+        code : |1-
+         Procedure p_Callback(sCallback is string)
+         m_sCallbackClick = sCallback
+        type : 2031616
+     template_refs : []
+  procedure_templates : []
+  property_templates : []
+ code_parameters :
+  internal_properties : CAAAAAgAAACVGQgYbalU7DKC3oH4ItDrjtcTHXXV/EuH8q0IbhyQlw==
+  original_name : CClasse1
+resources :
+ string_res :
+  identifier : 0x1006a1d934f1655a
+  internal_properties : CAAAAAgAAACm76HWfKGWp33VjXInA4cRlqArlgTTA862QGt72W2ld5Y=
+custom_note :
+ internal_properties : CAAAAAgAAABtB9HWVzrXO2+4NDRVK0vmzaNKrCKqH1DBX30lMmGZ

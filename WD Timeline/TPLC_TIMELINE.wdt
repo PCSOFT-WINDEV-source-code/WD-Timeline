@@ -1,0 +1,170 @@
+#To edit and compare internal_properties, use WINDEV integrated tools.
+#Internal properties refer to the properties of controls in windows, reports, etc.
+info :
+ name : TPLC_TIMELINE
+ major_version : 28
+ minor_version : 0
+ type : 20
+ description : ""
+ subtype : 0
+window :
+ name : TPLC_TIMELINE
+ identifier : 0x21129f701db704fa
+ internal_properties : CAAAAAgAAAAvb8w1GNblk0So+xBdOtX3Q/hRvUE+3q8N4aQjqkZZxz+rHT1dAvQtaeFoWjplkuQAgnmBjVftnwEMOq999XgsCAC5jBk5/zNWbaFO/dbodSR4FINRw1EOnKLEtoz/pcGsK8cGPG0xU0wCY1wAnKkkPPj/VGBeCyedPPJ5+9y1RjFs5y4c//ujOLNYJzLniYHS3fhq6vcsTWnEmyVZ3r2wtqXC4FvEEeFVpP3ps9eKkUXamJPg5SoQtmATQqza+0E06Jz6OEfk9lKd3s+Ouo3ILH4KKAKuxdeGofJjmbnsIOVwzzJuElEBAvA/OW/JRr0O04XN+CTeeS+tl5lM/gGxCLjHBj7BHxC1K/pvUAUZNKmsYoK9XVwSTJTBbqrs9MCBcH3lxj/NxODDPBfk9H9L/EgsB8CF+rbVFAt6kV4JevIbWmCdNTkGZt5CRaOw5zLJ4z0Y8+6Gn6R+Xu4qyGNxkBInNJZs0lzsfG21lJWkzOYw0xjgVu052398HRH5eyxVZVy9mJVxwXt/1smNnJVyw2x2J7Q9ZblKEy8QQ/UQ55EP/iF4kUfceYeTNjTXB60GFBijzGc6vA7QhA4QlFdpgLEu9qm8RPIeIK1gWw7CFCJ8KJBRMt3HR+sFAL+/M7MijhYPF5w0g2bAreEq269m+Gcf9c4nG7v3r9OHDGN4ra01YnZ5S8FhaZsVedbyE5ajJ/5HUalty4WCbpl1XqcjKnPiTzN13IJ5162qx3UXW0I7wvx7JYupSF1a74usRCc3tCzkdf0HbQc=
+ properties :
+  width : 100
+  height : 65
+ controls :
+  -
+    name : TPLC_TIMELINE
+    identifier : 0x21129f701db804fa
+    internal_properties : CAAAAAgAAAChRoz+iMg+KPYVDX9Wo9+zE1ujdS20BObcfKb6KC/0FmhG23xoQuA21bF+f0YqMVKfiskbcM7mPL8OTCz705AIkco735iuDHDBfuHJ2DsderROOlWVsFFoLwiucouewdBqasitB5U/dmo0jLK8xeaxNH3Uret/VrJPdfzw5dIEABYTiJiiXXo84XC9yDxt1I0eIPmYUqI+Yv4+BAkY/nYs6wckctund6ia7MmQ/WbUK/zIEUmcFhW6R4h/QXpIjbcSkG7NlIZL+pebyu2N6OWlTJcCbe8gEGe7HhwGf9PRUiHP0Hg6P7eU9UATQaN6YLrnndGst7rHPl/KwTbpE6HeVFdApTKN6UyKrmXR3yTtp6VQMXJKrY4fHu4xy3fy9X8Whgclckal8J8XQHERdDEmAq9ZBl+8R1azIkxZxn7Xid1dH9HFOuYwmQay1eg2fwHgUCo5B29HeaxtcldSl6j6EOkPPFqhFwbnSIA=
+    properties :
+     width : 100
+     height : 65
+    controls :
+     -
+       name : STC_TEMPLATE
+       identifier : 0x21129f701dba04fa
+       internal_properties : CAAAAAgAAABRAtsyA06oNErU0ZDcZQwKOdtyhUW1jjFBqpBNXnv62YIdXdnEQ1QdkpYexNjSrPJ8e77trg7IbGIeT6aHi3ySM0HjQhi5ZZ8GvCPXvEO9wobqaoC91XM/bF1/leT/likIc4eAvhOlph/Z4UiF0pIPCSntTqmlwT/bCCBOMUszQZ8SMqeRafeCJdvpOeub4H6jZ8MrQKJnK+EXiEJeAhnhr5xMe3nYAsbiXU4ieIVddpH0XnhSDEDiWnwe/zv77/QAQL3LLLhlam3Vrnwi5Msb4rm0Y5pjk46WjlI/TXOyp4xK4lf1zD2sPAMFgKrdQtE=
+       properties :
+        y : -26
+        width : 100
+        height : 20
+       type : 3
+       code_elements :
+        type_code : 2
+        p_codes : []
+     -
+       name : IMG_TIMELINE
+       identifier : 0x21129f701db904fa
+       internal_properties : CAAAAAgAAAAAmeP0eNjrGAwtTSRg32IVlr1gI/GuIm3F+otbp7kmX6/btLNxfgfsuc+YakxazKirHeEcgSYa8mOEMa1YZ92MyEhv4HnpKG1ltFDJyX/Ou5kphw/GuNzPO98iTRjU6O2LVlp40PGnC7yCRUanXG4SDQ76TURIDlnLMsIMlTcDYhGKLxMnUQfeu45Rr4WDjKusihBADFsucrrpJhqvhg6AsBET7+8WFFtETksyfxOft8DbdvgDvoadNGusxJysCkTV9qcrmMc0XDiEWBKLZfB5nMuxiezCMrh7plj1xfSMHQF737O7b7gnS5VyLothBJqfG3S0Hugk7MyZ9GumZtfkLXSGMaAjkXDfC0Z2UJrtzU5jGdaQWdiEyRZk6dPvNJ2oWeMgv4Mfr28BjcfM6ouj/MRUEW0ykgSTZE/GqIIB/SXoS7HK5ikRpNFuR/WKMJphyndPnNvnZa+p6H9xNIQeYXLprZFF5rEfQ0yg0yABJz93B1Vidvy+NRJrQhWyj9Hwgf1e/+Q=
+       properties :
+        width : 100
+        height : 65
+       type : 8
+       code_elements :
+        type_code : 8
+        p_codes : []
+    type : 42
+    code_elements :
+     type_code : 92
+     p_codes :
+      -
+        code : |1-
+         GLOBAL
+         	
+         	// Controller
+         	TimelineControl	is Timeline(IMG_TIMELINE)
+         	
+         LOCAL
+         	
+         	dDate is date = Today
+         	
+         // Default range
+         TimelineControl.p_MinDateTime = CreateDateTime(dDate..Year - 5)
+         TimelineControl.p_MaxDateTime = CreateDateTime(dDate..Year + 5)
+         
+         // Default zoom
+         TimelineControl.p_Zoom = zoomYears
+      -
+        code : |1-
+         
+         // First display
+         TimelineControl.Displays()
+        type : 14
+      -
+        code : |1-
+         
+        type : 15
+      -
+        code : |1-
+         
+        type : 16
+      -
+        code : |1-
+         
+        type : 43
+      -
+        code : |1-
+         
+        type : 42
+      -
+        code : |1-
+         
+        type : 17
+ menu :
+  name : _Menu
+  identifier : 0x2b1d092fe2485ec8
+  internal_properties : CAAAAAgAAAAjoO+VYAXYh2SYpTvD7AgXCHEHRjuTd5K/qNR3zUpM1aIlQYejrbtK76/LWLozAhgdmcRuoxDXe7vi3lf8PoZYYzNtPYlgCK9AarNrSCSSPpGDp+KLIikSwO2L+lCfwFobS8WKQZu2noN9WV5ipxuLKjTaOvfojbcmu1i6FPrF8FEPa+oQBHdRyMYNLYyLF/nTGn2y7NBixG5dC7y2wsO4aXA1CKpzZUca8sBJUrSr9FqhTJMK37pOOZqMTeCIo+trbOMI1osTdzjD26auXrzETrP8OxsAt+HgvahLwDb4kRpR6lQOjBIj
+  options : []
+ languages :
+  - en-GB
+ popup_menus : []
+ message_bar : {}
+ actionbar : {}
+ code_elements :
+  type_code : 91
+  p_codes : []
+  procedures :
+   -
+     name : BackgroundColor
+     procedure_id : 1230220951652664570
+     type_code : 14
+     code : |1-
+      // Summary: Returns or modifies the background color
+      // Syntax:
+      // [ <Result> = ] BackgroundColor ([<nBackgroundColor> is int])
+      //
+      // Parameters:
+      // 	nBackgroundColor (integer - default value=-1): New background color
+      // Return value:
+      // 	integer: Background color
+      //
+      Procedure BackgroundColor(LOCAL nBackgroundColor is int = -1)
+      
+      IF nBackgroundColor <> -1 THEN
+      	
+      	// Modifies the background color
+      	TimelineControl.p_BackgroundColor = nBackgroundColor		
+      END
+      
+      RESULT TimelineControl.p_BackgroundColor
+     type : 458752
+   -
+     name : Color
+     procedure_id : 1230220951652730106
+     type_code : 14
+     code : |1-
+      // Summary: Returns or modifies the color of the text
+      // Syntax:
+      // [ <Result> = ] Color ([<nColor> is int])
+      //
+      // Parameters:
+      // 	nColor (integer - default value=-1): New color for the text
+      // Return value:
+      // 	integer: Color of the text
+      //
+      Procedure Color(LOCAL nColor is int = -1)
+      
+      IF nColor <> -1 THEN
+      	
+      	// Modifies the color of the text
+      	TimelineControl.p_Color = nColor		
+      END
+      
+      RESULT TimelineControl.p_Color
+     type : 458752
+  procedure_templates : []
+  property_templates : []
+ code_parameters :
+  internal_properties : CAAAAAgAAACVGQgYbalU7DKC3oH4ItDrjtcTHXXV/EuH8q0IbhyQlw==
+  original_name : MDLC_ModèleChamps1
+resources :
+ string_res :
+  identifier : 0x1006a1d935236589
+  internal_properties : CAAAAAgAAACm76HWfKGWp33VjXInA4cRlqArlgTTA862QGt72W2ld5Y=
+custom_note :
+ internal_properties : CAAAAAgAAAC68/W0/adbG0nFCRhrE42B5HRnbDzVHaz86sSQyxlBk7I=
+rad :
+ internal_properties : CAAAAAgAAABoAN7PLpwJW3EiA7WVZdCA5EwrCA1rvutcDHooMWKe

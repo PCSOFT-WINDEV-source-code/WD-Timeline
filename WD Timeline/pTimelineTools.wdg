@@ -1,0 +1,171 @@
+#To edit and compare internal_properties, use WINDEV integrated tools.
+#Internal properties refer to the properties of controls in windows, reports, etc.
+info :
+ name : pTimelineTools
+ major_version : 28
+ minor_version : 0
+ type : 7
+ description : ""
+ subtype : 0
+procedure_set :
+ identifier : 0x11129f7302a40fb4
+ internal_properties : CAAAAAgAAABGLu41kG7fjQV3iS4F72qmnKaNh5694reolNKIW0iw
+ code_elements :
+  type_code : 31
+  p_codes :
+   -
+     code : |1-
+      
+      RECT is Structure
+      	x1, y1, x2, y2 are int	
+      END
+      
+      CONSTANT
+      	
+      	// Type of Display
+      	zoomDecades	 	= 1
+      	zoomYears	 	= 2
+      	zoomMonths		= 3
+      	zoomDays	 	= 4
+      	zoomHours	 	= 5
+      	zoomMinutes10 	= 6
+      	zoomMinutes 	= 7
+      	
+      	
+      	// dAdvancedText
+      	DT_BOTTOM					= 0x00000008
+      	DT_CALCRECT					= 0x00000400
+      	DT_CENTER					= 0x00000001
+      	DT_EDITCONTROL				= 0x00002000
+      	DT_END_ELLIPSIS				= 0x00008000
+      	DT_EXPANDTABS				= 0x00000040
+      	DT_EXTERNALLEADING			= 0x00000200
+      	DT_HIDEPREFIX				= 0x00100000
+      	DT_INTERNAL					= 0x00001000
+      	DT_LEFT						= 0x00000000
+      	DT_MODIFYSTRING				= 0x00010000
+      	DT_NOCLIP					= 0x00000100
+      	DT_NOFULLWIDTHCHARBREAK		= 0x00080000
+      	DT_NOPREFIX					= 0x00000800
+      	DT_PATH_ELLIPSIS			= 0x00004000
+      	DT_PREFIXONLY				= 0x00200000
+      	DT_RIGHT					= 0x00000002
+      	DT_RTLREADING				= 0x00020000
+      	DT_SINGLELINE				= 0x00000020
+      	DT_TABSTOP					= 0x00000080
+      	DT_TOP						= 0x00000000	
+      	DT_VCENTER					= 0x00000004
+      	DT_WORDBREAK				= 0x00000010
+      	DT_WORD_ELLIPSIS			= 0x00040000
+      END
+     type : 720896
+  procedures :
+   -
+     name : CreateDateTime
+     procedure_id : 1230220964539994036
+     type_code : 15
+     code : |1-
+      // Summary: Creates a DateTime from the specified components
+      Procedure CreateDateTime(LOCAL nYear is int, LOCAL nMonth is int = 1, LOCAL nDay is int = 1, LOCAL nHours is int = 0, LOCAL nMinutes is int = 0, LOCAL nSeconds is int = 0)
+      
+      dtDateTime is datetime
+      
+      dbgAssert(     nYear 		>  0)
+      dbgAssert(0 <  nMonth 		<= 12)
+      dbgAssert(0 <  nDay 		<= 31)
+      dbgAssert(0 <= nHours 		<= 23)
+      dbgAssert(0 <= nMinutes 		<= 59)
+      dbgAssert(0 <= nSeconds 		<= 59)
+      
+      // Configures the DateTime
+      dtDateTime..Year   	  = nYear
+      dtDateTime..Month    	  = nMonth
+      dtDateTime..Day    	  = nDay
+      dtDateTime..Hour   	  = nHours
+      dtDateTime..Minute  	  = nMinutes
+      dtDateTime..Second 	  = nSeconds
+      dtDateTime..Millisecond = 0
+      
+      RESULT dtDateTime
+     type : 458752
+   -
+     name : CreateDuration
+     procedure_id : 1230220964540059572
+     type_code : 15
+     code : |1-
+      // Summary: Creates a Duration variable from the different components
+      // Syntax:
+      //[ <Result> = ] CreateDuration ([<nDays> is int [, <nHours> is int [, <nMinutes> is int [, <nSeconds> is int]]]])
+      //
+      // Parameters:
+      //	nDays (integer - default value=0): Number of days
+      //	nHours (integer - default value=0): Number of hours
+      //	nMinutes (integer - default value=0): Number of minutes
+      //	nSeconds (integer - default value=0): Number of seconds
+      // Return value:
+      // 	duration: Generated duration
+      //
+      Procedure CreateDuration(LOCAL nDays is int = 0, LOCAL nHours is int = 0, LOCAL nMinutes is int = 0, LOCAL nSeconds is int = 0)
+      
+      duDuration	is duration
+      
+      // Applies
+      duDuration..Day 	 = nDays
+      duDuration..Hour	 = nHours
+      duDuration..Minute  = nMinutes
+      duDuration..Second = nSeconds
+      
+      RESULT duDuration
+     type : 458752
+   -
+     name : dAdvancedText
+     procedure_id : 1230220964540125108
+     type_code : 15
+     code : |1-
+      // Summary: Equivalent to the function named dText but used to specify the rectangle and the drawing options of the text
+      // Syntax:
+      //dAdvancedText (<nDC> is int, <x1> is int, <y1> is int, <x2> is int, <y2> is int, <sText> is string [, <nOptions> is int [, <nColor> is int]])
+      //
+      // Parameters:
+      //	nDC (integer): DC
+      //	x1 (integer): Coordinate of the rectangle
+      //	y1 (integer): Coordinate of the rectangle
+      //	x2 (integer): Coordinate of the rectangle
+      //	y2 (integer): Coordinate of the rectangle
+      //	sText (string): Text to draw
+      //	nOptions (integer - default value=0): Drawing options, DT_xxxx constants
+      // 	nColor (integer - default value=-1): <specify the role of nColor>
+      // Return value:
+      // 	None
+      //
+      Procedure dAdvancedText(LOCAL nDC is int, x1 is int, y1 is int, x2 is int, y2 is int, LOCAL sText is string, LOCAL nOptions is int = 0, LOCAL nColor is int = -1)
+      
+      stRect 			is RECT = [x1, y1, x2, y2]
+      sModifiedText	is string ASCIIZ on 512 = sText
+      
+      // Applies the color
+      IF nColor <> -1 THEN
+      	API(“gdi32”, “SetBkMode”, nDC, 1)
+      	API(“gdi32”, “SetTextColor”, nDC, nColor)
+      END
+      
+      // Draw some multi-line text with ellipsis in the specified rectangle
+      API(“user32”, “DrawTextExA”, nDC, &sModifiedText, Length(sModifiedText), &stRect, nOptions, Null)
+      
+      // Copies the new values again
+      x1 = stRect.x1
+      x2 = stRect.x2
+      y1 = stRect.y1
+      y2 = stRect.y2
+     type : 458752
+  procedure_templates : []
+  property_templates : []
+ code_parameters :
+  internal_properties : CAAAAAgAAACVGQgYbalU7DKC3oH4ItDrjtcTHXXV/EuH8q0IbhyQlw==
+  original_name : COL_Collection1
+resources :
+ string_res :
+  identifier : 0x1006a1d935146569
+  internal_properties : CAAAAAgAAACm76HWfKGWp33VjXInA4cRlqArlgTTA862QGt72W2ld5Y=
+custom_note :
+ internal_properties : CAAAAAgAAABtB9HWVzrXO2+4NDRVK0vmzaNKrCKqH1DBX30lMmGZ
